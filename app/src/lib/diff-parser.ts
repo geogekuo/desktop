@@ -22,6 +22,13 @@ import { getLargestLineNumber } from '../ui/diff/diff-helpers'
 // in which case s defaults to 1
 const diffHeaderRe = /^@@ -(\d+)(?:,(\d+))? \+(\d+)(?:,(\d+))? @@/
 
+/**
+ * Regular expression matching invisible bidirectional Unicode characters that
+ * may be interpreted or compiled differently than what it appears. More info:
+ * https://github.co/hiddenchars
+ */
+export const HiddenBidiCharsRegex = /[\u202A-\u202E]|[\u2066-\u2069]/
+
 const DiffPrefixAdd = '+' as const
 const DiffPrefixDelete = '-' as const
 const DiffPrefixContext = ' ' as const
@@ -304,7 +311,6 @@ export class DiffParser {
     let diffLineNumber = linesConsumed
     while ((c = this.parseLinePrefix(this.peek()))) {
       const line = this.readLine()
-      diffLineNumber++
 
       if (!line) {
         throw new Error('Expected unified diff line but reached end of diff')
@@ -330,6 +336,12 @@ export class DiffParser {
 
         continue
       }
+
+      // We must increase `diffLineNumber` only when we're certain that the line
+      // is not a "no newline" marker. Otherwise, we'll end up with a wrong
+      // `diffLineNumber` for the next line. This could happen if the last line
+      // in the file doesn't have a newline before the change.
+      diffLineNumber++
 
       let diffLine: DiffLine
 
@@ -401,6 +413,7 @@ export class DiffParser {
           hunks: [],
           isBinary: false,
           maxLineNumber: 0,
+          hasHiddenBidiChars: false,
         }
       }
 
@@ -411,6 +424,7 @@ export class DiffParser {
           hunks: [],
           isBinary: true,
           maxLineNumber: 0,
+          hasHiddenBidiChars: false,
         }
       }
 
@@ -438,6 +452,7 @@ export class DiffParser {
         hunks,
         isBinary: headerInfo.isBinary,
         maxLineNumber: getLargestLineNumber(hunks),
+        hasHiddenBidiChars: HiddenBidiCharsRegex.test(text),
       }
     } finally {
       this.reset()

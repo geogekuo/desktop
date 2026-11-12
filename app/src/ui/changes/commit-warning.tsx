@@ -1,24 +1,30 @@
 import * as React from 'react'
 import { assertNever } from '../../lib/fatal-error'
-import { Octicon, OcticonSymbol } from '../octicons'
+import { Octicon } from '../octicons'
+import * as octicons from '../octicons/octicons.generated'
 
 export enum CommitWarningIcon {
   Warning,
   Information,
+  Error,
 }
 
 const renderIcon = (icon: CommitWarningIcon) => {
   let className = ''
-  let symbol = OcticonSymbol.alert
+  let symbol = octicons.alert
 
   switch (icon) {
     case CommitWarningIcon.Warning:
       className = 'warning-icon'
-      symbol = OcticonSymbol.alert
+      symbol = octicons.alert
       break
     case CommitWarningIcon.Information:
       className = 'information-icon'
-      symbol = OcticonSymbol.info
+      symbol = octicons.info
+      break
+    case CommitWarningIcon.Error:
+      className = 'error-icon'
+      symbol = octicons.stop
       break
     default:
       assertNever(icon, `Unexpected icon value ${icon}`)
@@ -33,7 +39,7 @@ export const CommitWarning: React.FunctionComponent<{
   readonly icon: CommitWarningIcon
 }> = props => {
   return (
-    <div id="commit-warning" onContextMenu={ignoreContextMenu}>
+    <div className="commit-warning-component" onContextMenu={ignoreContextMenu}>
       <div className="warning-icon-container">{renderIcon(props.icon)}</div>
       <div className="warning-message">{props.children}</div>
     </div>

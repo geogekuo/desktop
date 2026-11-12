@@ -7,13 +7,22 @@ import { Commit } from '../../models/commit'
 import { DragType, DropTarget, DropTargetType } from '../../models/drag-drop'
 import { GitHubRepository } from '../../models/github-repository'
 import { CommitListItem } from '../history/commit-list-item'
-import { Octicon, OcticonSymbol } from '../octicons'
+import { Octicon } from '../octicons'
+import * as octicons from '../octicons/octicons.generated'
+import { Account } from '../../models/account'
+import { Emoji } from '../../lib/emoji'
 
 interface ICommitDragElementProps {
   readonly commit: Commit
   readonly selectedCommits: ReadonlyArray<Commit>
   readonly gitHubRepository: GitHubRepository | null
-  readonly emoji: Map<string, string>
+  /**
+   * Whether or not this is shown for a keyboard-based insertion (like reordering
+   * commits). Optional. Default: false
+   */
+  readonly isKeyboardInsertion?: boolean
+  readonly emoji: Map<string, Emoji>
+  readonly accounts: ReadonlyArray<Account>
 }
 
 interface ICommitDragElementState {
@@ -71,7 +80,7 @@ export class CommitDragElement extends React.Component<
     switch (currentDropTarget.type) {
       case DropTargetType.Branch:
         const copyToPlus = __DARWIN__ ? null : (
-          <Octicon className="copy-to-icon" symbol={OcticonSymbol.plus} />
+          <Octicon className="copy-to-icon" symbol={octicons.plus} />
         )
         toolTipContents = (
           <>
@@ -167,7 +176,10 @@ export class CommitDragElement extends React.Component<
     const { commit, gitHubRepository, selectedCommits, emoji } = this.props
     const count = selectedCommits.length
 
-    const className = classNames({ 'multiple-selected': count > 1 })
+    const className = classNames({
+      'multiple-selected': count > 1,
+      'in-keyboard-insertion-mode': this.props.isKeyboardInsertion ?? false,
+    })
     return (
       <div id="commit-drag-element" className={className}>
         <div className="commit-box">
@@ -177,11 +189,9 @@ export class CommitDragElement extends React.Component<
             commit={commit}
             selectedCommits={selectedCommits}
             emoji={emoji}
-            canBeUndone={false}
-            canBeAmended={false}
-            canBeResetTo={false}
-            isLocal={false}
             showUnpushedIndicator={false}
+            accounts={this.props.accounts}
+            preferAbsoluteDates={false}
           />
         </div>
         {this.renderDragToolTip()}
